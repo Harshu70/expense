@@ -1,0 +1,125 @@
+<div class="min-h-screen bg-gray-100 p-8">
+  <div class="flex justify-between items-center mb-8">
+    <h1 class="text-3xl font-bold text-gray-800">Financial Dashboard</h1>
+    <button class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Logout</button>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500">
+      <h3 class="text-gray-500 text-sm font-medium">Total Income</h3>
+      <p class="text-2xl font-bold text-green-600">₹{{ stats.income }}</p>
+    </div>
+    <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-red-500">
+      <h3 class="text-gray-500 text-sm font-medium">Total Expenses</h3>
+      <p class="text-2xl font-bold text-red-600">₹{{ stats.expense }}</p>
+    </div>
+    <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500">
+      <h3 class="text-gray-500 text-sm font-medium">Net Balance</h3>
+      <p class="text-2xl font-bold text-blue-600">₹{{ stats.balance }}</p>
+    </div>
+  </div>
+  <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+    <h2 class="text-lg font-semibold text-gray-800 mb-4">Add New Transaction</h2>
+
+    <form (ngSubmit)="onSubmit()" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+      <div class="col-span-1 md:col-span-2">
+        <label class="block text-sm font-medium text-gray-700">Description</label>
+        <input
+          type="text"
+          [(ngModel)]="transactionData.description"
+          name="description"
+          placeholder="e.g. Grocery"
+          class="w-full mt-1 px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 border-gray-300"
+        />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Amount</label>
+        <input
+          type="number"
+          [(ngModel)]="transactionData.amount"
+          name="amount"
+          placeholder="0.00"
+          class="w-full mt-1 px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 border-gray-300"
+        />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Type</label>
+        <select
+          [(ngModel)]="transactionData.type"
+          name="type"
+          class="w-full mt-1 px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 border-gray-300 bg-white"
+        >
+          <option value="INCOME">Income (+)</option>
+          <option value="EXPENSE">Expense (-)</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Category</label>
+        <input
+          type="text"
+          [(ngModel)]="transactionData.category"
+          name="category"
+          placeholder="e.g. Food"
+          class="w-full mt-1 px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 border-gray-300"
+        />
+      </div>
+
+      <button
+        type="submit"
+        class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
+      >
+        Add
+      </button>
+    </form>
+  </div>
+
+  <div class="bg-white rounded-lg shadow-md overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200">
+      <h2 class="text-lg font-semibold text-gray-800">Recent Transactions</h2>
+    </div>
+
+    <table class="w-full text-left border-collapse">
+      <thead>
+        <tr class="bg-gray-50 text-gray-600 uppercase text-xs">
+          <th class="px-6 py-3">Date</th>
+          <th class="px-6 py-3">Description</th>
+          <th class="px-6 py-3">Category</th>
+          <th class="px-6 py-3">Amount</th>
+          <th class="px-6 py-3">Action</th>
+        </tr>
+      </thead>
+      <tbody class="text-gray-700">
+        <tr *ngFor="let t of transactions" class="border-b hover:bg-gray-50">
+          <td class="px-6 py-4">{{ t.date }}</td>
+          <td class="px-6 py-4">{{ t.description }}</td>
+          <td class="px-6 py-4">
+            <span
+              class="px-2 py-1 text-xs rounded-full"
+              [ngClass]="
+                t.type === 'INCOME' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+              "
+            >
+              {{ t.category }}
+            </span>
+          </td>
+          <td
+            class="px-6 py-4 font-semibold"
+            [ngClass]="t.type === 'INCOME' ? 'text-green-600' : 'text-red-600'"
+          >
+            {{ t.type === 'INCOME' ? '+' : '-' }}₹{{ t.amount }}
+          </td>
+          <td class="px-6 py-4">
+            <button (click)="deleteTs(t.id)" class="text-red-500 hover:text-red-700">Delete</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div *ngIf="transactions.length === 0" class="p-8 text-center text-gray-500">
+      No transactions found. Start adding some!
+    </div>
+  </div>
+</div>
