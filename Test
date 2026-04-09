@@ -1,0 +1,1 @@
+${field.value:toLower():equals('start'):ifElse('', ${field.value:contains('gateway'):ifElse('', ${field.value:replace('_ut','')})})}
