@@ -8,12 +8,16 @@ current_activity_name = $.current_activity_name
 creation_date = $.creation_date
 
 
+MERGE INTO PGS_PROCESS KEY(PROCESS_ID) VALUES
+
+
+
 MERGE INTO PGS_PROCESS KEY(PROCESS_ID) VALUES (
 '${process_id}',
 '${job_name}',
 '${current_activity_id}',
 '${state}',
-'${job_id}',
+${job_id:trim():isEmpty():ifElse('NULL', ${job_id})},
 '${current_activity_name}',
-'${creation_date}'
+${creation_date:trim():isEmpty():ifElse('NULL', "'${creation_date}'")}
 );
