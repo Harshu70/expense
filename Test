@@ -1,1 +1,19 @@
 ${field.value:toLower():contains('gateway'):or(${field.value:toLower():equals('start')}):ifElse('', ${field.value:replace('_ut','')})}
+process_id = $.process_id
+job_name = $.job_name
+current_activity_id = $.current_activity_id
+state = $.state
+job_id = $.job_id
+current_activity_name = $.current_activity_name
+creation_date = $.creation_date
+
+
+MERGE INTO PGS_PROCESS KEY(PROCESS_ID) VALUES (
+'${process_id}',
+'${job_name}',
+'${current_activity_id}',
+'${state}',
+'${job_id}',
+'${current_activity_name}',
+'${creation_date}'
+);
