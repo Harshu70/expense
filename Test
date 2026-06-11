@@ -48,3 +48,13 @@ public MTMessageDTO parse(String swiftMessage) {
 
     return dto;
 }
+
+
+MT111Dto dto = new MT111Dto();
+
+dto.setMessageId(fields.get("20"));
+dto.setCheckNumber(fields.get("21"));
+dto.setCheckDate(fields.get("30"));
+dto.setAmount(fields.get("32A"));
+dto.setPayeeName(fields.get("59"));
+dto.setStopReason(fields.get("75"));
