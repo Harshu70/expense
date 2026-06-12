@@ -58,3 +58,20 @@ dto.setCheckDate(fields.get("30"));
 dto.setAmount(fields.get("32A"));
 dto.setPayeeName(fields.get("59"));
 dto.setStopReason(fields.get("75"));
+
+public class MT111Fields {
+
+    public static final String MESSAGE_ID = "20";
+    public static final String CHECK_NUMBER = "21";
+    public static final String CHECK_DATE = "30";
+    public static final String AMOUNT = "32A";
+    public static final String PAYEE_NAME = "59";
+    public static final String STOP_REASON = "75";
+}
+
+dto.setMessageId(fields.get(MT111Fields.MESSAGE_ID));
+dto.setCheckNumber(fields.get(MT111Fields.CHECK_NUMBER));
+dto.setCheckDate(fields.get(MT111Fields.CHECK_DATE));
+dto.setAmount(fields.get(MT111Fields.AMOUNT));
+dto.setPayeeName(fields.get(MT111Fields.PAYEE_NAME));
+dto.setStopReason(fields.get(MT111Fields.STOP_REASON));
