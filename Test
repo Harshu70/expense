@@ -1,39 +1,47 @@
-i have a aplication where i have to parse a cam107 and camt108 coming from swift, for this i have there xsd file and xml file as well. How can i validate the xml with xsd and parse the details from xml. I am using springboot
+// 1. Import the Document class from the exact path JAXB created
+import iso.std.iso._20022.tech.xsd.camt107.Document; 
 
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.Unmarshaller;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.io.File;
+import java.time.LocalDateTime;
 
-private final SwiftMessageRepository repository;
+@Service
+public class Camt107Strategy implements SwiftMessageStrategy {
+
+    private final SwiftMessageRepository repository;
     private final JAXBContext camt107Context;
 
     public Camt107Strategy(SwiftMessageRepository repository) throws Exception {
         this.repository = repository;
-        // Load the context from your generated classes
-        this.camt107Context = JAXBContext.newInstance(com.yourcompany.swift.model.camt107.Document.class);
+        
+        // 2. Initialize the context using the imported Document class
+        this.camt107Context = JAXBContext.newInstance(Document.class);
     }
 
     @Override
     public boolean supports(String messageType) {
-        // Matches the namespace or root tag of the XML
         return "camt.107.001.01".equalsIgnoreCase(messageType);
     }
 
     @Override
-    @Transactional // Ensures DB operation rolls back if something fails
+    @Transactional
     public void processAndStore(File xmlFile) throws Exception {
-        // 1. Unmarshal (Parse)
         Unmarshaller unmarshaller = camt107Context.createUnmarshaller();
-        var document = (com.yourcompany.swift.model.camt107.Document) unmarshaller.unmarshal(xmlFile);
-
-        // 2. Extract Fields (Navigate the JAXB object tree)
-        // Note: Actual getter names depend on your exact XSD
-        String msgId = document.getReceipt().getMsgId(); 
         
-        // 3. Map to Entity
+        // 3. Cast the unmarshalled object to your specific Document
+        Document document = (Document) unmarshaller.unmarshal(xmlFile);
+
+        // 4. Extract details (Use your IDE's autocomplete to see the available getters)
+        // Example: String msgId = document.getBkToCstmrStmt().getGrpHdr().getMsgId();
+        
         SwiftMessageEntity entity = new SwiftMessageEntity();
-        entity.setMessageId(msgId);
+        // entity.setMessageId(msgId);
         entity.setMessageType("CAMT.107");
         entity.setCreationDate(LocalDateTime.now());
 
-        // 4. Save to Database
         repository.save(entity);
-        System.out.println("Successfully stored CAMT.107 with ID: " + msgId);
     }
+}
