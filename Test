@@ -1,1 +1,39 @@
 i have a aplication where i have to parse a cam107 and camt108 coming from swift, for this i have there xsd file and xml file as well. How can i validate the xml with xsd and parse the details from xml. I am using springboot
+
+
+private final SwiftMessageRepository repository;
+    private final JAXBContext camt107Context;
+
+    public Camt107Strategy(SwiftMessageRepository repository) throws Exception {
+        this.repository = repository;
+        // Load the context from your generated classes
+        this.camt107Context = JAXBContext.newInstance(com.yourcompany.swift.model.camt107.Document.class);
+    }
+
+    @Override
+    public boolean supports(String messageType) {
+        // Matches the namespace or root tag of the XML
+        return "camt.107.001.01".equalsIgnoreCase(messageType);
+    }
+
+    @Override
+    @Transactional // Ensures DB operation rolls back if something fails
+    public void processAndStore(File xmlFile) throws Exception {
+        // 1. Unmarshal (Parse)
+        Unmarshaller unmarshaller = camt107Context.createUnmarshaller();
+        var document = (com.yourcompany.swift.model.camt107.Document) unmarshaller.unmarshal(xmlFile);
+
+        // 2. Extract Fields (Navigate the JAXB object tree)
+        // Note: Actual getter names depend on your exact XSD
+        String msgId = document.getReceipt().getMsgId(); 
+        
+        // 3. Map to Entity
+        SwiftMessageEntity entity = new SwiftMessageEntity();
+        entity.setMessageId(msgId);
+        entity.setMessageType("CAMT.107");
+        entity.setCreationDate(LocalDateTime.now());
+
+        // 4. Save to Database
+        repository.save(entity);
+        System.out.println("Successfully stored CAMT.107 with ID: " + msgId);
+    }
