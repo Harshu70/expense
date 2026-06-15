@@ -1,18 +1,39 @@
-public void processXmlPayload(String xmlContent) {
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/v1/swift")
+public class SwiftMessageController {
+
+    private final SwiftOrchestrator orchestrator;
+
+    public SwiftMessageController(SwiftOrchestrator orchestrator) {
+        this.orchestrator = orchestrator;
+    }
+
+    /**
+     * Endpoint to receive raw XML SWIFT messages.
+     * Expects headers: Content-Type: application/xml
+     */
+    @PostMapping(value = "/process", consumes = "application/xml", produces = "application/json")
+    public ResponseEntity<String> processSwiftMessage(@RequestBody String xmlPayload) {
         try {
-            String messageType = extractMessageType(xmlContent);
+            if (xmlPayload == null || xmlPayload.isBlank()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("XML payload cannot be empty.");
+            }
 
-            SwiftMessageStrategy matchedStrategy = strategies.stream()
-                    .filter(strategy -> strategy.supports(messageType))
-                    .findFirst()
-                    .orElseThrow(() -> new IllegalArgumentException("Unsupported SWIFT message type: " + messageType));
+            // Trigger the orchestrator
+            orchestrator.processXmlPayload(xmlPayload);
 
-            // Pass the string directly to the strategy
-            matchedStrategy.processAndStore(xmlContent);
+            return ResponseEntity.status(HttpStatus.ACCEPTED).body("SWIFT message successfully received and processed.");
 
+        } catch (IllegalArgumentException e) {
+            // Catches unsupported message types
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
-            // In a production app, you might want to re-throw a custom exception here
-            // so the REST controller can return a 400 Bad Request or 500 Error
-            throw new RuntimeException("Failed to process SWIFT message: " + e.getMessage(), e);
+            // Catches parsing or database errors
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing message: " + e.getMessage());
         }
     }
+}
