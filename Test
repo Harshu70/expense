@@ -1,39 +1,89 @@
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import com.prowidesoftware.swift.model.field.Field20;
+import com.prowidesoftware.swift.model.field.Field32A;
+import com.prowidesoftware.swift.model.field.Field32B;
+import com.prowidesoftware.swift.model.field.Field59;
+import com.prowidesoftware.swift.model.mt.AbstractMT;
+import com.prowidesoftware.swift.model.mt.mt1xx.MT110;
+import com.prowidesoftware.swift.model.mt.mt1xx.MT111;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-@RestController
-@RequestMapping("/api/v1/swift")
-public class SwiftMessageController {
+import java.io.InputStream;
+import java.math.BigDecimal;
 
-    private final SwiftOrchestrator orchestrator;
+@Service
+public class SwiftParserService {
 
-    public SwiftMessageController(SwiftOrchestrator orchestrator) {
-        this.orchestrator = orchestrator;
+    private final SwiftMessageRepository repository;
+
+    public SwiftParserService(SwiftMessageRepository repository) {
+        this.repository = repository;
+    }
+
+    @Transactional
+    public void processSwiftFile(String fileName) throws Exception {
+        // 1. Read file from the resources folder
+        ClassPathResource resource = new ClassPathResource(fileName);
+        
+        try (InputStream inputStream = resource.getInputStream()) {
+            
+            // 2. Parse into an AbstractMT to dynamically check the message type
+            AbstractMT abstractMt = AbstractMT.parse(inputStream);
+            SwiftMessageEntity entity = new SwiftMessageEntity();
+
+            // 3. Process MT110
+            if (abstractMt.isType(110)) {
+                MT110 mt110 = (MT110) abstractMt;
+                entity.setMessageType("MT110");
+                
+                extractStandardFields(mt110.getField20(), mt110.getField32A(), mt110.getField32B(), mt110.getField59(), entity);
+            } 
+            // 4. Process MT111
+            else if (abstractMt.isType(111)) {
+                MT111 mt111 = (MT111) abstractMt;
+                entity.setMessageType("MT111");
+                
+                extractStandardFields(mt111.getField20(), mt111.getField32A(), mt111.getField32B(), mt111.getField59(), entity);
+            } else {
+                throw new IllegalArgumentException("Unsupported Message Type: MT" + abstractMt.getMessageType());
+            }
+
+            // 5. Save to the database
+            repository.save(entity);
+        }
     }
 
     /**
-     * Endpoint to receive raw XML SWIFT messages.
-     * Expects headers: Content-Type: application/xml
+     * Helper method to map the parsed Prowide fields into the JPA entity.
      */
-    @PostMapping(value = "/process", consumes = "application/xml", produces = "application/json")
-    public ResponseEntity<String> processSwiftMessage(@RequestBody String xmlPayload) {
-        try {
-            if (xmlPayload == null || xmlPayload.isBlank()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("XML payload cannot be empty.");
-            }
-
-            // Trigger the orchestrator
-            orchestrator.processXmlPayload(xmlPayload);
-
-            return ResponseEntity.status(HttpStatus.ACCEPTED).body("SWIFT message successfully received and processed.");
-
-        } catch (IllegalArgumentException e) {
-            // Catches unsupported message types
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (Exception e) {
-            // Catches parsing or database errors
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing message: " + e.getMessage());
+    private void extractStandardFields(Field20 f20, Field32A f32A, Field32B f32B, Field59 f59, SwiftMessageEntity entity) {
+        // Extract Field 20 (Sender's Reference)
+        if (f20 != null) {
+            entity.setSenderReference(f20.getValue());
         }
+
+        // Extract Field 32A or 32B (Amount & Currency)
+        // MT messages can use variations of Field 32 depending on standard formatting rules
+        if (f32A != null) {
+            entity.setCurrency(f32A.getCurrency());
+            entity.setAmount(parseSwiftAmount(f32A.getAmount()));
+        } else if (f32B != null) {
+            entity.setCurrency(f32B.getCurrency());
+            entity.setAmount(parseSwiftAmount(f32B.getAmount()));
+        }
+
+        // Extract Field 59 (Payee)
+        if (f59 != null) {
+            entity.setPayeeDetails(f59.getValue());
+        }
+    }
+
+    /**
+     * Converts SWIFT amount format (comma as decimal) to standard BigDecimal
+     */
+    private BigDecimal parseSwiftAmount(String swiftAmount) {
+        if (swiftAmount == null || swiftAmount.isEmpty()) return BigDecimal.ZERO;
+        return new BigDecimal(swiftAmount.replace(',', '.'));
     }
 }
