@@ -1,89 +1,17 @@
-import com.prowidesoftware.swift.model.field.Field20;
-import com.prowidesoftware.swift.model.field.Field32A;
-import com.prowidesoftware.swift.model.field.Field32B;
-import com.prowidesoftware.swift.model.field.Field59;
-import com.prowidesoftware.swift.model.mt.AbstractMT;
-import com.prowidesoftware.swift.model.mt.mt1xx.MT110;
-import com.prowidesoftware.swift.model.mt.mt1xx.MT111;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.io.InputStream;
-import java.math.BigDecimal;
-
-@Service
-public class SwiftParserService {
-
-    private final SwiftMessageRepository repository;
-
-    public SwiftParserService(SwiftMessageRepository repository) {
-        this.repository = repository;
-    }
-
-    @Transactional
-    public void processSwiftFile(String fileName) throws Exception {
-        // 1. Read file from the resources folder
-        ClassPathResource resource = new ClassPathResource(fileName);
-        
-        try (InputStream inputStream = resource.getInputStream()) {
-            
-            // 2. Parse into an AbstractMT to dynamically check the message type
-            AbstractMT abstractMt = AbstractMT.parse(inputStream);
-            SwiftMessageEntity entity = new SwiftMessageEntity();
-
-            // 3. Process MT110
-            if (abstractMt.isType(110)) {
-                MT110 mt110 = (MT110) abstractMt;
-                entity.setMessageType("MT110");
+List<Field59> f59List = mt110.getField59();
                 
-                extractStandardFields(mt110.getField20(), mt110.getField32A(), mt110.getField32B(), mt110.getField59(), entity);
-            } 
-            // 4. Process MT111
-            else if (abstractMt.isType(111)) {
-                MT111 mt111 = (MT111) abstractMt;
-                entity.setMessageType("MT111");
-                
-                extractStandardFields(mt111.getField20(), mt111.getField32A(), mt111.getField32B(), mt111.getField59(), entity);
-            } else {
-                throw new IllegalArgumentException("Unsupported Message Type: MT" + abstractMt.getMessageType());
-            }
+                // Determine the number of cheques based on the size of Field 32 lists
+                int numberOfCheques = Math.max(f32AList.size(), f32BList.size());
 
-            // 5. Save to the database
-            repository.save(entity);
-        }
-    }
-
-    /**
-     * Helper method to map the parsed Prowide fields into the JPA entity.
-     */
-    private void extractStandardFields(Field20 f20, Field32A f32A, Field32B f32B, Field59 f59, SwiftMessageEntity entity) {
-        // Extract Field 20 (Sender's Reference)
-        if (f20 != null) {
-            entity.setSenderReference(f20.getValue());
-        }
-
-        // Extract Field 32A or 32B (Amount & Currency)
-        // MT messages can use variations of Field 32 depending on standard formatting rules
-        if (f32A != null) {
-            entity.setCurrency(f32A.getCurrency());
-            entity.setAmount(parseSwiftAmount(f32A.getAmount()));
-        } else if (f32B != null) {
-            entity.setCurrency(f32B.getCurrency());
-            entity.setAmount(parseSwiftAmount(f32B.getAmount()));
-        }
-
-        // Extract Field 59 (Payee)
-        if (f59 != null) {
-            entity.setPayeeDetails(f59.getValue());
-        }
-    }
-
-    /**
-     * Converts SWIFT amount format (comma as decimal) to standard BigDecimal
-     */
-    private BigDecimal parseSwiftAmount(String swiftAmount) {
-        if (swiftAmount == null || swiftAmount.isEmpty()) return BigDecimal.ZERO;
-        return new BigDecimal(swiftAmount.replace(',', '.'));
-    }
-}
+                for (int i = 0; i < numberOfCheques; i++) {
+                    SwiftMessageEntity entity = new SwiftMessageEntity();
+                    entity.setMessageType("MT110");
+                    entity.setSenderReference(senderRef);
+                    
+                    Field32A f32A = (i < f32AList.size()) ? f32AList.get(i) : null;
+                    Field32B f32B = (i < f32BList.size()) ? f32BList.get(i) : null;
+                    Field59 f59 = (i < f59List.size()) ? f59List.get(i) : null;
+                    
+                    extractStandardFields(null, f32A, f32B, f59, entity);
+                    entitiesToSave.add(entity);
+                }
