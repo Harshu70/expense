@@ -1,6 +1,22 @@
-// Check if the current index 'i' is less than the total size of the list
-Field32A f32A = (f32AList != null && i < f32AList.size()) ? f32AList.get(i) : null;
-
-Field32B f32B = (f32BList != null && i < f32BList.size()) ? f32BList.get(i) : null;
-
-Field59 f59 = (f59List != null && i < f59List.size()) ? f59List.get(i) : null;
+{1:F01BANKDEFAMACD1234123456}
+{2:O1101200250103BANKBEBBAXXX22221234562501031200N}
+{4:
+:20:BATCH-REF-999
+:21:CHQ-00001
+:30:240622
+:32B:USD1500,50
+:59:/123456789
+JOHN DOE
+123 MAIN ST
+:21:CHQ-00002
+:30:240622
+:32B:USD2400,00
+:59:/987654321
+JANE SMITH
+456 OAK AVE
+:21:CHQ-00003
+:30:240622
+:32B:USD75,25
+:59:/55556666
+ACME CORPORATION
+-}
