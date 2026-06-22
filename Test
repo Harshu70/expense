@@ -1,17 +1,6 @@
-List<Field59> f59List = mt110.getField59();
-                
-                // Determine the number of cheques based on the size of Field 32 lists
-                int numberOfCheques = Math.max(f32AList.size(), f32BList.size());
+// Check if the current index 'i' is less than the total size of the list
+Field32A f32A = (f32AList != null && i < f32AList.size()) ? f32AList.get(i) : null;
 
-                for (int i = 0; i < numberOfCheques; i++) {
-                    SwiftMessageEntity entity = new SwiftMessageEntity();
-                    entity.setMessageType("MT110");
-                    entity.setSenderReference(senderRef);
-                    
-                    Field32A f32A = (i < f32AList.size()) ? f32AList.get(i) : null;
-                    Field32B f32B = (i < f32BList.size()) ? f32BList.get(i) : null;
-                    Field59 f59 = (i < f59List.size()) ? f59List.get(i) : null;
-                    
-                    extractStandardFields(null, f32A, f32B, f59, entity);
-                    entitiesToSave.add(entity);
-                }
+Field32B f32B = (f32BList != null && i < f32BList.size()) ? f32BList.get(i) : null;
+
+Field59 f59 = (f59List != null && i < f59List.size()) ? f59List.get(i) : null;
