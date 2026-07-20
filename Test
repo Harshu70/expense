@@ -1,22 +1,88 @@
-{1:F01BANKDEFAMACD1234123456}
-{2:O1101200250103BANKBEBBAXXX22221234562501031200N}
-{4:
-:20:BATCH-REF-999
-:21:CHQ-00001
-:30:240622
-:32B:USD1500,50
-:59:/123456789
-JOHN DOE
-123 MAIN ST
-:21:CHQ-00002
-:30:240622
-:32B:USD2400,00
-:59:/987654321
-JANE SMITH
-456 OAK AVE
-:21:CHQ-00003
-:30:240622
-:32B:USD75,25
-:59:/55556666
-ACME CORPORATION
--}
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.stream.Stream;
+
+@Service
+public class FixedWidthFileGeneratorService {
+
+    private final TransactionRepository repository;
+
+    public FixedWidthFileGeneratorService(TransactionRepository repository) {
+        this.repository = repository;
+    }
+
+    // @Transactional is MANDATORY when streaming from the database
+    @Transactional(readOnly = true)
+    public void generateFile(String outputFilePath) {
+        Path path = Paths.get(outputFilePath);
+
+        try (Stream<TransactionEntity> rowStream = repository.streamAllTransactions();
+             BufferedWriter writer = Files.newBufferedWriter(path)) {
+
+            rowStream.forEach(row -> {
+                String formattedLine = buildFixedLengthLine(row);
+                try {
+                    writer.write(formattedLine);
+                    writer.newLine();
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to write line to file", e);
+                }
+            });
+
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to initialize file writer", e);
+        }
+    }
+
+    private String buildFixedLengthLine(TransactionEntity row) {
+        // Pre-allocate the exact size based on your final position (600) to optimize memory
+        StringBuilder sb = new StringBuilder(600);
+
+        // Map fields sequentially based on your Excel sheet images. 
+        // Because we strictly enforce the length of each field, the "start position" naturally aligns.
+
+        // 1. X_IE_NAME (Length: 25, Alpha) - Example of a Hardcoded Value
+        sb.append(formatAlpha("HARDCODED_EVENT", 25));
+
+        // 2. X_IE_SGMT2 (Length: 25, Alpha) - Example of a DB Value
+        sb.append(formatAlpha(row.getSegmentName(), 25));
+
+        // 3. X_DTAPRULE (Length: 8, Numeric) - Example of a Date from DB
+        sb.append(formatNumeric(row.getApplicationDate(), 8));
+
+        // ... continue mapping all ~40 fields sequentially ...
+
+        // 40. FILLER_1 (Length: 50, Alpha)
+        sb.append(formatAlpha("", 50)); 
+
+        // 41. FILLER_2 (Length: 1, Alpha)
+        sb.append(formatAlpha("", 1));
+
+        return sb.toString();
+    }
+
+    /**
+     * Formats Alphanumeric strings: Left-aligned, space-padded.
+     * Truncates if the value exceeds the allowed length.
+     */
+    private String formatAlpha(String value, int length) {
+        if (value == null) value = "";
+        if (value.length() > length) return value.substring(0, length);
+        return String.format("%-" + length + "s", value);
+    }
+
+    /**
+     * Formats Numeric strings: Right-aligned, zero-padded.
+     * Truncates if the value exceeds the allowed length.
+     */
+    private String formatNumeric(String value, int length) {
+        if (value == null) value = "";
+        if (value.length() > length) return value.substring(0, length);
+        return String.format("%" + length + "s", value).replace(' ', '0');
+    }
+}
