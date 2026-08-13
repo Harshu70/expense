@@ -5,53 +5,130 @@
 
     <executions>
 
+        <!-- ========================= -->
         <!-- CAMT 107 V01 -->
+        <!-- ========================= -->
         <execution>
             <id>generate-camt107-v01</id>
+
             <goals>
                 <goal>xjc</goal>
             </goals>
+
             <configuration>
+
                 <sources>
                     <source>
-                        ${project.basedir}/src/main/resources/v01
+                        ${project.basedir}/src/main/resources/xsd/v01/camt.107.001.01.xsd
                     </source>
                 </sources>
 
                 <packageName>
-                    com.yourcompany.camt.v01
+                    com.yourcompany.camt.v01.camt107
                 </packageName>
 
                 <outputDirectory>
-                    ${project.build.directory}/generated-sources/jaxb/v01
+                    ${project.build.directory}/generated-sources/jaxb/camt107-v01
                 </outputDirectory>
 
-                <clearOutputDir>false</clearOutputDir>
+                <clearOutputDir>true</clearOutputDir>
+
             </configuration>
         </execution>
 
+
+        <!-- ========================= -->
         <!-- CAMT 107 V02 -->
+        <!-- ========================= -->
         <execution>
             <id>generate-camt107-v02</id>
+
             <goals>
                 <goal>xjc</goal>
             </goals>
+
             <configuration>
+
                 <sources>
                     <source>
-                        ${project.basedir}/src/main/resources/v02
+                        ${project.basedir}/src/main/resources/xsd/v02/camt.107.001.02.xsd
                     </source>
                 </sources>
 
                 <packageName>
-                    com.yourcompany.camt.v02
+                    com.yourcompany.camt.v02.camt107
                 </packageName>
 
                 <outputDirectory>
-                    ${project.build.directory}/generated-sources/jaxb/v02
+                    ${project.build.directory}/generated-sources/jaxb/camt107-v02
                 </outputDirectory>
 
-                <clearOutputDir>false</clearOutputDir>
+                <clearOutputDir>true</clearOutputDir>
+
+            </configuration>
+        </execution>
+
+
+        <!-- ========================= -->
+        <!-- CAMT 108 V01 -->
+        <!-- ========================= -->
+        <execution>
+            <id>generate-camt108-v01</id>
+
+            <goals>
+                <goal>xjc</goal>
+            </goals>
+
+            <configuration>
+
+                <sources>
+                    <source>
+                        ${project.basedir}/src/main/resources/xsd/v01/camt.108.001.01.xsd
+                    </source>
+                </sources>
+
+                <packageName>
+                    com.yourcompany.camt.v01.camt108
+                </packageName>
+
+                <outputDirectory>
+                    ${project.build.directory}/generated-sources/jaxb/camt108-v01
+                </outputDirectory>
+
+                <clearOutputDir>true</clearOutputDir>
+
+            </configuration>
+        </execution>
+
+
+        <!-- ========================= -->
+        <!-- CAMT 108 V02 -->
+        <!-- ========================= -->
+        <execution>
+            <id>generate-camt108-v02</id>
+
+            <goals>
+                <goal>xjc</goal>
+            </goals>
+
+            <configuration>
+
+                <sources>
+                    <source>
+                        ${project.basedir}/src/main/resources/xsd/v02/camt.108.001.02.xsd
+                    </source>
+                </sources>
+
+                <packageName>
+                    com.yourcompany.camt.v02.camt108
+                </packageName>
+
+                <outputDirectory>
+                    ${project.build.directory}/generated-sources/jaxb/camt108-v02
+                </outputDirectory>
+
+                <clearOutputDir>true</clearOutputDir>
+
             </configuration>
         </execution>
 
