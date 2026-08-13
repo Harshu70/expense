@@ -1,186 +1,59 @@
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.stream.Stream;
+<plugin>
+    <groupId>org.codehaus.mojo</groupId>
+    <artifactId>jaxb2-maven-plugin</artifactId>
+    <version>3.2.0</version>
 
-@Service
-public class FixedWidthFileGeneratorService {
+    <executions>
 
-    private final TransactionRepository repository;
+        <!-- CAMT 107 V01 -->
+        <execution>
+            <id>generate-camt107-v01</id>
+            <goals>
+                <goal>xjc</goal>
+            </goals>
+            <configuration>
+                <sources>
+                    <source>
+                        ${project.basedir}/src/main/resources/v01
+                    </source>
+                </sources>
 
-    public FixedWidthFileGeneratorService(TransactionRepository repository) {
-        this.repository = repository;
-    }
+                <packageName>
+                    com.yourcompany.camt.v01
+                </packageName>
 
-    // @Transactional is MANDATORY when streaming from the database
-    @Transactional(readOnly = true)
-    public void generateFile(String outputFilePath) {
-        Path path = Paths.get(outputFilePath);
+                <outputDirectory>
+                    ${project.build.directory}/generated-sources/jaxb/v01
+                </outputDirectory>
 
-        try (Stream<TransactionEntity> rowStream = repository.streamAllTransactions();
-             BufferedWriter writer = Files.newBufferedWriter(path)) {
+                <clearOutputDir>false</clearOutputDir>
+            </configuration>
+        </execution>
 
-            rowStream.forEach(row -> {
-                String formattedLine = buildFixedLengthLine(row);
-                try {
-                    writer.write(formattedLine);
-                    writer.newLine();
-                } catch (IOException e) {
-                    throw new RuntimeException("Failed to write line to file", e);
-                }
-            });
+        <!-- CAMT 107 V02 -->
+        <execution>
+            <id>generate-camt107-v02</id>
+            <goals>
+                <goal>xjc</goal>
+            </goals>
+            <configuration>
+                <sources>
+                    <source>
+                        ${project.basedir}/src/main/resources/v02
+                    </source>
+                </sources>
 
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to initialize file writer", e);
-        }
-    }
+                <packageName>
+                    com.yourcompany.camt.v02
+                </packageName>
 
-    private String buildFixedLengthLine(TransactionEntity row) {
-        // Pre-allocate the exact size based on your final position (600) to optimize memory
-        // Pre-allocate exactly 600 characters
-StringBuilder sb = new StringBuilder(600);
+                <outputDirectory>
+                    ${project.build.directory}/generated-sources/jaxb/v02
+                </outputDirectory>
 
-// 3. X_IE_NAME (Pos: 1, Len: 25, Type: A)
-sb.append(formatAlpha("HARDCODED_EVENT", 25));
+                <clearOutputDir>false</clearOutputDir>
+            </configuration>
+        </execution>
 
-// 4. X_IE_SGMT2 (Pos: 26, Len: 25, Type: A)
-sb.append(formatAlpha(row.getSegmentName(), 25));
-
-// 5. X_DTAPRULE (Pos: 51, Len: 8, Type: N)
-sb.append(formatNumeric(row.getApplicationDate(), 8));
-
-// 6. X_GROUPCOD (Pos: 59, Len: 17, Type: A)
-sb.append(formatAlpha(row.getGroupCode(), 17));
-
-// 7. X_INSTCODE (Pos: 76, Len: 17, Type: A)
-sb.append(formatAlpha(row.getInstanceCode(), 17));
-
-// 8. X_REVERSE (Pos: 93, Len: 1, Type: N)
-sb.append(formatNumeric("0", 1)); // Hardcoded example
-
-// 9. X_STAMPID (Pos: 94, Len: 25, Type: A)
-sb.append(formatAlpha(row.getStampId(), 25));
-
-// 10. BI_NAME2 (Pos: 119, Len: 8, Type: A)
-sb.append(formatAlpha(row.getBiName(), 8));
-
-// 11. DT_BIGEN (Pos: 127, Len: 8, Type: N)
-sb.append(formatNumeric(row.getBiGenDate(), 8));
-
-// 12. HR_BIGEN (Pos: 135, Len: 6, Type: N)
-sb.append(formatNumeric(row.getBiGenHour(), 6));
-
-// 13. NUM_SEQ (Pos: 141, Len: 8, Type: N)
-sb.append(formatNumeric(row.getSequenceNumber(), 8));
-
-// 14. CD_SRCSYS (Pos: 149, Len: 8, Type: A)
-sb.append(formatAlpha("SYS_SRC", 8)); // Hardcoded example
-
-// 15. CD_BUSEVT (Pos: 157, Len: 10, Type: A)
-sb.append(formatAlpha(row.getBusinessEventCode(), 10));
-
-// 16. CD_EVTCAN (Pos: 167, Len: 1, Type: A)
-sb.append(formatAlpha(row.getCancelEventCode(), 1));
-
-// 17. CD_BOOKEN2 (Pos: 168, Len: 12, Type: A)
-sb.append(formatAlpha(row.getBookingEntity(), 12));
-
-// 18. CD_PARTEN2 (Pos: 180, Len: 12, Type: A)
-sb.append(formatAlpha(row.getPartnerEntity(), 12));
-
-// 19. NB_BUSEVT (Pos: 192, Len: 17, Type: A)
-sb.append(formatAlpha(row.getBusinessEventId(), 17));
-
-// 20. DT_ACCSTRT (Pos: 209, Len: 8, Type: N)
-sb.append(formatNumeric(row.getAccountingStartDate(), 8));
-
-// 21. ID_CEJOB2 (Pos: 217, Len: 8, Type: A)
-sb.append(formatAlpha(row.getAceJob(), 8));
-
-// 22. FILLER (Pos: 225, Len: 27, Type: A)
-sb.append(formatAlpha("", 27)); // Blank filler
-
-// 23. CD_BRCHCLI (Pos: 252, Len: 5, Type: N)
-sb.append(formatNumeric(row.getClientBranch(), 5));
-
-// 24. CD_RADCLI (Pos: 257, Len: 6, Type: N)
-sb.append(formatNumeric(row.getClientRadix(), 6));
-
-// 25. CD_ORDCLI (Pos: 263, Len: 3, Type: A)
-sb.append(formatAlpha(row.getClientOrdinal(), 3));
-
-// 26. CD_KEY (Pos: 266, Len: 2, Type: N)
-sb.append(formatNumeric(row.getClientKey(), 2));
-
-// 27. CD_BRCHOPE (Pos: 268, Len: 5, Type: N)
-sb.append(formatNumeric(row.getOperationBranch(), 5));
-
-// 28. CD_CRDR (Pos: 273, Len: 2, Type: A)
-sb.append(formatAlpha(row.getCrDrIndicator(), 2));
-
-// 29. AMT_TRANS (Pos: 275, Len: 15, Type: N)
-sb.append(formatNumeric(row.getTransactionAmount(), 15));
-
-// 30. CUR_AMT (Pos: 290, Len: 3, Type: A)
-sb.append(formatAlpha(row.getCurrency(), 3));
-
-// 31. DT_OPE (Pos: 293, Len: 8, Type: A)
-sb.append(formatAlpha(row.getOperationDate(), 8));
-
-// 32. DT_VALUE (Pos: 301, Len: 8, Type: A)
-sb.append(formatAlpha(row.getValueDate(), 8));
-
-// 33. CD_REFCLI (Pos: 309, Len: 16, Type: A)
-sb.append(formatAlpha(row.getClientReference(), 16));
-
-// 34. ADD_DESC (Pos: 325, Len: 34, Type: A)
-sb.append(formatAlpha(row.getAdditionalDesc(), 34));
-
-// 35. EXT_DESC (Pos: 359, Len: 175, Type: A)
-sb.append(formatAlpha(row.getExtendedDesc(), 175));
-
-// 36. CD_BRCHC_1 (Pos: 534, Len: 5, Type: N)
-sb.append(formatNumeric(row.getBankBranch(), 5));
-
-// 37. CD_RADCL_1 (Pos: 539, Len: 6, Type: N)
-sb.append(formatNumeric(row.getBankRadix(), 6));
-
-// 38. CD_ORDCL_1 (Pos: 545, Len: 3, Type: A)
-sb.append(formatAlpha(row.getBankOrdinal(), 3));
-
-// 39. CD_KEY_1 (Pos: 548, Len: 2, Type: N)
-sb.append(formatNumeric(row.getBankKey(), 2));
-
-// 40. FILLER_1 (Pos: 550, Len: 50, Type: A)
-sb.append(formatAlpha("", 50)); // Blank filler
-
-// 41. FILLER_2 (Pos: 600, Len: 1, Type: A)
-sb.append(formatAlpha("", 1)); // Blank filler
-
-return sb.toString();
-    }
-
-    /**
-     * Formats Alphanumeric strings: Left-aligned, space-padded.
-     * Truncates if the value exceeds the allowed length.
-     */
-    private String formatAlpha(String value, int length) {
-        if (value == null) value = "";
-        if (value.length() > length) return value.substring(0, length);
-        return String.format("%-" + length + "s", value);
-    }
-
-    /**
-     * Formats Numeric strings: Right-aligned, zero-padded.
-     * Truncates if the value exceeds the allowed length.
-     */
-    private String formatNumeric(String value, int length) {
-        if (value == null) value = "";
-        if (value.length() > length) return value.substring(0, length);
-        return String.format("%" + length + "s", value).replace(' ', '0');
-    }
-}
+    </executions>
+</plugin>
